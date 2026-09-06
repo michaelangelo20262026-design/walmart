@@ -317,26 +317,38 @@ body {
   border-radius: 2.5rem;
 }
 
+/* =========================
+   5-SLIDE ANIMATION
+========================= */
+
 .hero-slide:nth-child(1) {
-  animation: slideOne 12s infinite;
+  animation: slideOne 20s infinite;
 }
 
 .hero-slide:nth-child(2) {
-  animation: slideTwo 12s infinite;
+  animation: slideTwo 20s infinite;
 }
 
 .hero-slide:nth-child(3) {
-  animation: slideThree 12s infinite;
+  animation: slideThree 20s infinite;
+}
+
+.hero-slide:nth-child(4) {
+  animation: slideFour 20s infinite;
+}
+
+.hero-slide:nth-child(5) {
+  animation: slideFive 20s infinite;
 }
 
 @keyframes slideOne {
   0%,
-  30% {
+  16% {
     opacity: 1;
   }
 
-  33%,
-  97% {
+  20%,
+  96% {
     opacity: 0;
   }
 
@@ -347,16 +359,16 @@ body {
 
 @keyframes slideTwo {
   0%,
-  30% {
+  16% {
     opacity: 0;
   }
 
-  33%,
-  63% {
+  20%,
+  36% {
     opacity: 1;
   }
 
-  66%,
+  40%,
   100% {
     opacity: 0;
   }
@@ -364,12 +376,46 @@ body {
 
 @keyframes slideThree {
   0%,
-  63% {
+  36% {
     opacity: 0;
   }
 
-  66%,
-  97% {
+  40%,
+  56% {
+    opacity: 1;
+  }
+
+  60%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes slideFour {
+  0%,
+  56% {
+    opacity: 0;
+  }
+
+  60%,
+  76% {
+    opacity: 1;
+  }
+
+  80%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes slideFive {
+  0%,
+  76% {
+    opacity: 0;
+  }
+
+  80%,
+  96% {
     opacity: 1;
   }
 
@@ -382,7 +428,7 @@ body {
    DOTS
 ========================= */
 
-.hero-dots {
+.hero-slide-dots {
   position: absolute;
   bottom: 18px;
   left: 50%;
@@ -392,15 +438,16 @@ body {
   z-index: 5;
 }
 
-.hero-dot {
+.hero-slide-dots span {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #ffffff;
   opacity: 0.5;
+  transition: opacity 0.25s ease;
 }
 
-.hero-dot.active {
+.hero-slide-dots span.active {
   opacity: 1;
 }
 

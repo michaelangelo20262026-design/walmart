@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Favour Store</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- =========================
+         NAVBAR
+    ========================== -->
+
+    <header class="navbar">
+      <!-- STORE BRAND -->
+
+      <div class="store-name">
+        <div class="store-brand">
+          <div class="store-logo">FS</div>
+
+          <div>
+            <h2>Favour Store</h2>
+
+            <span>Point of Sale</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NAVIGATION -->
+
+      <nav class="nav-links">
+        <button type="button" class="nav-link active">
+          <span class="nav-icon">⌂</span>
+          <span>POS</span>
+        </button>
+
+        <button type="button" class="nav-link">
+          <span class="nav-icon">▤</span>
+          <span>History</span>
+        </button>
+
+        <button type="button" class="nav-link">
+          <span class="nav-icon">▦</span>
+          <span>Products</span>
+        </button>
+
+        <button type="button" class="nav-link">
+          <span class="nav-icon">◫</span>
+          <span>Dashboard</span>
+        </button>
+
+        <button type="button" class="nav-link">
+          <span class="nav-icon">⚙</span>
+          <span>Settings</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- =========================
+         MAIN POS
+    ========================== -->
+
+    <main class="pos-container">
+      <!-- =========================
+           LEFT SIDE — PRODUCTS
+      ========================== -->
+
+      <section class="products-area">
+        <!-- BARCODE / SEARCH -->
+
+        <div class="product-search">
+          <input
+            type="text"
+            id="barcodeInput"
+            placeholder="Enter barcode..."
+            autocomplete="off"
+            aria-label="Enter barcode"
+          />
+
+          <input
+            type="text"
+            id="productSearchInput"
+            placeholder="Search product..."
+            autocomplete="off"
+            aria-label="Search product"
+          />
+
+          <button type="button" id="scanBarcodeBtn">📷 Scan Barcode</button>
+
+          <button type="button" id="manualItemBtn">+ Manual Item</button>
+        </div>
+
+        <!-- =========================
+             BARCODE SCANNER
+        ========================== -->
+
+        <div class="barcode-scanner hidden" id="barcodeScanner">
+          <div class="scanner-header">
+            <div>
+              <h3>Scan Barcode</h3>
+
+              <p>Point the camera at the product barcode.</p>
+            </div>
+
+            <button
+              type="button"
+              id="closeScannerBtn"
+              aria-label="Close barcode scanner"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="scanner-camera">
+            <video id="barcodeVideo" autoplay playsinline></video>
+
+            <div class="scanner-frame"></div>
+          </div>
+
+          <p class="scanner-status" id="scannerStatus">Starting camera...</p>
+        </div>
+
+        <!-- =========================
+             CATEGORIES
+        ========================== -->
+
+        <div class="categories">
+          <button type="button" class="category active">All</button>
+
+          <button type="button" class="category">Food</button>
+
+          <button type="button" class="category">Drinks</button>
+
+          <button type="button" class="category">Toiletries</button>
+
+          <button type="button" class="category">Household</button>
+
+          <button type="button" class="category">Others</button>
+        </div>
+
+        <!-- =========================
+             PRODUCTS
+        ========================== -->
+
+        <div class="products-grid" id="productsGrid">
+          <!-- JavaScript will display products here -->
+        </div>
+      </section>
+
+      <!-- =========================
+           RIGHT SIDE — CART
+      ========================== -->
+
+      <section class="cart-area">
+        <div class="cart-header">
+          <div>
+            <h2>Added Items</h2>
+
+            <span id="cartCount">0 items</span>
+          </div>
+
+          <button type="button" id="clearCartBtn">Clear</button>
+        </div>
+
+        <!-- CART ITEMS -->
+
+        <div class="cart-items" id="cartItems">
+          <div class="empty-cart">
+            <div>🛒</div>
+
+            <h3>No items added</h3>
+
+            <p>Scan a product or select one from the products list.</p>
+          </div>
+        </div>
+
+        <!-- CART TOTAL -->
+
+        <div class="cart-bottom">
+          <div class="cart-total">
+            <span>Total</span>
+
+            <strong id="cartTotal">₦0.00</strong>
+          </div>
+
+          <button
+            type="button"
+            id="generateReceiptBtn"
+            class="generate-receipt-btn"
+          >
+            Generate Receipt
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- =========================
+         HISTORY
+    ========================== -->
+
+    <section class="history-section hidden" id="historySection">
+      <div class="history-header">
+        <div>
+          <h2>Sales History</h2>
+
+          <p>View previous receipts and sales.</p>
+        </div>
+      </div>
+
+      <div class="history-list" id="historyList">
+        <!--
+          JavaScript will display sales
+          grouped by date here.
+        -->
+      </div>
+    </section>
+
+    <!-- =========================
+         PRODUCTS MANAGEMENT
+    ========================== -->
+
+    <section class="products-management hidden" id="productsManagement">
+      <div class="products-management-header">
+        <div>
+          <h2>Products</h2>
+
+          <p>Register and manage your store products.</p>
+        </div>
+
+        <button type="button" id="addProductBtn">+ Add Product</button>
+      </div>
+
+      <!-- PRODUCTS SEARCH -->
+
+      <div class="products-search">
+        <input
+          type="text"
+          id="productsSearchInput"
+          placeholder="Search products..."
+          autocomplete="off"
+          aria-label="Search products"
+        />
+      </div>
+
+      <!-- =========================
+           REGISTER PRODUCT FORM
+      ========================== -->
+
+      <div class="product-form-container hidden" id="productFormContainer">
+        <div class="product-form-header">
+          <div>
+            <h3>Register Product</h3>
+
+            <p>Add a product to your store inventory.</p>
+          </div>
+
+          <button
+            type="button"
+            id="closeProductFormBtn"
+            aria-label="Close product form"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="productForm">
+          <!-- PRODUCT NAME -->
+
+          <div class="form-group">
+            <label for="productNameInput">Product Name</label>
+
+            <input
+              type="text"
+              id="productNameInput"
+              placeholder="Enter product name"
+              required
+            />
+          </div>
+
+          <!-- PRICE -->
+
+          <div class="form-group">
+            <label for="productPriceInput">Price</label>
+
+            <input
+              type="number"
+              id="productPriceInput"
+              placeholder="Enter price"
+              min="1"
+              step="1"
+              required
+            />
+          </div>
+
+          <!-- BARCODE -->
+
+          <div class="form-group">
+            <label for="productBarcodeInput">Barcode</label>
+
+            <input
+              type="text"
+              id="productBarcodeInput"
+              placeholder="Enter or scan barcode"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- CATEGORY -->
+
+          <div class="form-group">
+            <label for="productCategoryInput">Category</label>
+
+            <select id="productCategoryInput" required>
+              <option value="">Select category</option>
+
+              <option value="Food">Food</option>
+
+              <option value="Drinks">Drinks</option>
+
+              <option value="Toiletries">Toiletries</option>
+
+              <option value="Household">Household</option>
+
+              <option value="Others">Others</option>
+            </select>
+          </div>
+
+          <!-- STOCK -->
+
+          <div class="form-group">
+            <label for="productStockInput">Stock Quantity</label>
+
+            <input
+              type="number"
+              id="productStockInput"
+              placeholder="Enter stock quantity"
+              min="0"
+              step="1"
+              required
+            />
+          </div>
+
+          <!-- SAVE PRODUCT -->
+
+          <button type="submit" class="save-product-btn">Save Product</button>
+        </form>
+      </div>
+
+      <!-- =========================
+           REGISTERED PRODUCTS
+      ========================== -->
+
+      <div class="registered-products" id="registeredProducts">
+        <!-- JavaScript will display registered products here -->
+      </div>
+    </section>
+
+    <!-- =========================
+         DASHBOARD
+    ========================== -->
+
+    <section class="dashboard-section hidden" id="dashboardSection">
+      <div class="dashboard-header">
+        <div>
+          <h2>Dashboard</h2>
+
+          <p>Overview of your store's sales and inventory.</p>
+        </div>
+      </div>
+
+      <!-- =========================
+           DASHBOARD SUMMARY
+      ========================== -->
+
+      <div class="dashboard-stats">
+        <!-- TODAY'S SALES -->
+
+        <div class="dashboard-card">
+          <span>Today's Sales</span>
+
+          <strong id="todaySales">₦0.00</strong>
+        </div>
+
+        <!-- TODAY'S TRANSACTIONS -->
+
+        <div class="dashboard-card">
+          <span>Today's Transactions</span>
+
+          <strong id="todayTransactions">0</strong>
+        </div>
+
+        <!-- TOTAL PRODUCTS -->
+
+        <div class="dashboard-card">
+          <span>Total Products</span>
+
+          <strong id="totalProducts">0</strong>
+        </div>
+
+        <!-- LOW STOCK -->
+
+        <div class="dashboard-card">
+          <span>Low Stock</span>
+
+          <strong id="lowStockProducts">0</strong>
+        </div>
+
+        <!-- OUT OF STOCK -->
+
+        <div class="dashboard-card">
+          <span>Out of Stock</span>
+
+          <strong id="outOfStockProducts">0</strong>
+        </div>
+      </div>
+
+      <!-- =========================
+           RECENT SALES
+      ========================== -->
+
+      <div class="dashboard-panel">
+        <div class="dashboard-panel-header">
+          <div>
+            <h3>Recent Sales</h3>
+
+            <p>Your latest transactions.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-recent-sales" id="dashboardRecentSales">
+          <!-- JavaScript will display recent sales here -->
+        </div>
+      </div>
+
+      <!-- =========================
+           TOP SELLING PRODUCTS
+      ========================== -->
+
+      <div class="dashboard-panel">
+        <div class="dashboard-panel-header">
+          <div>
+            <h3>Top Selling Products</h3>
+
+            <p>Products with the highest quantities sold.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-top-products" id="dashboardTopProducts">
+          <!-- JavaScript will display top products here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         SETTINGS
+    ========================== -->
+
+    <section class="settings-section hidden" id="settingsSection">
+      <div class="settings-header">
+        <div>
+          <h2>Settings</h2>
+
+          <p>Manage your store and POS preferences.</p>
+        </div>
+      </div>
+
+      <!-- =========================
+           STORE INFORMATION
+      ========================== -->
+
+      <div class="settings-panel">
+        <div class="settings-panel-header">
+          <div>
+            <h3>Store Information</h3>
+
+            <p>Update the information displayed on your store.</p>
+          </div>
+        </div>
+
+        <div class="settings-form">
+          <div class="form-group">
+            <label for="storeNameInput">Store Name</label>
+
+            <input
+              type="text"
+              id="storeNameInput"
+              placeholder="Enter store name"
+              value="Favour Store"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="storeAddressInput">Store Address</label>
+
+            <input
+              type="text"
+              id="storeAddressInput"
+              placeholder="Enter store address"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="storePhoneInput">Phone Number</label>
+
+            <input
+              type="tel"
+              id="storePhoneInput"
+              placeholder="Enter phone number"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================
+           RECEIPT SETTINGS
+      ========================== -->
+
+      <div class="settings-panel">
+        <div class="settings-panel-header">
+          <div>
+            <h3>Receipt Settings</h3>
+
+            <p>Customize the information shown on receipts.</p>
+          </div>
+        </div>
+
+        <div class="settings-form">
+          <div class="form-group">
+            <label for="receiptFooterInput">Receipt Footer</label>
+
+            <input
+              type="text"
+              id="receiptFooterInput"
+              placeholder="e.g. Thank you for shopping with us!"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================
+           INVENTORY SETTINGS
+      ========================== -->
+
+      <div class="settings-panel">
+        <div class="settings-panel-header">
+          <div>
+            <h3>Inventory Settings</h3>
+
+            <p>Configure your low-stock warning.</p>
+          </div>
+        </div>
+
+        <div class="settings-form">
+          <div class="form-group">
+            <label for="lowStockInput">Low Stock Alert</label>
+
+            <input
+              type="number"
+              id="lowStockInput"
+              min="0"
+              step="1"
+              value="5"
+              placeholder="Enter quantity"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================
+           APPEARANCE
+      ========================== -->
+
+      <div class="settings-panel">
+        <div class="settings-panel-header">
+          <div>
+            <h3>Appearance</h3>
+
+            <p>Choose how your POS interface looks.</p>
+          </div>
+        </div>
+
+        <div class="settings-option">
+          <div>
+            <strong>Dark Mode</strong>
+
+            <p>Use a darker appearance for the POS.</p>
+          </div>
+
+          <label class="settings-switch">
+            <input type="checkbox" id="darkModeToggle" />
+
+            <span class="settings-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- =========================
+           DATA MANAGEMENT
+      ========================== -->
+
+      <div class="settings-panel">
+        <div class="settings-panel-header">
+          <div>
+            <h3>Data Management</h3>
+
+            <p>Manage your saved POS data.</p>
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button
+            type="button"
+            id="backupDataBtn"
+            class="settings-secondary-btn"
+          >
+            Backup Data
+          </button>
+
+          <button
+            type="button"
+            id="clearSalesHistoryBtn"
+            class="settings-danger-btn"
+          >
+            Clear Sales History
+          </button>
+        </div>
+      </div>
+
+      <!-- =========================
+           SAVE SETTINGS
+      ========================== -->
+
+      <div class="settings-footer">
+        <button type="button" id="saveSettingsBtn" class="save-settings-btn">
+          Save Settings
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================
+         RECEIPT AREA
+    ========================== -->
+
+    <section class="receipt-section hidden" id="receiptSection">
+      <div class="receipt">
+        <!-- RECEIPT HEADER -->
+
+        <div class="receipt-header">
+          <h2 id="receiptStoreName">Favour Store</h2>
+
+          <p id="receiptStoreAddress"></p>
+
+          <p id="receiptStorePhone"></p>
+
+          <p>SALES RECEIPT</p>
+        </div>
+
+        <!-- RECEIPT INFORMATION -->
+
+        <div class="receipt-info">
+          <p>
+            Receipt No:
+            <span id="receiptNumber"></span>
+          </p>
+
+          <p>
+            Date:
+            <span id="receiptDate"></span>
+          </p>
+        </div>
+
+        <!-- RECEIPT ITEMS -->
+
+        <div class="receipt-items" id="receiptItems">
+          <!-- JavaScript will add receipt items -->
+        </div>
+
+        <!-- RECEIPT TOTAL -->
+
+        <div class="receipt-total">
+          <div>
+            <span>Subtotal</span>
+
+            <strong id="receiptSubtotal">₦0.00</strong>
+          </div>
+
+          <div>
+            <span>Discount</span>
+
+            <strong id="receiptDiscount">₦0.00</strong>
+          </div>
+
+          <div class="grand-total">
+            <span>Total</span>
+
+            <strong id="receiptGrandTotal">₦0.00</strong>
+          </div>
+        </div>
+
+        <!-- THANK YOU -->
+
+        <p class="thank-you" id="receiptFooter">
+          Thank you for shopping with us!
+        </p>
+      </div>
+
+      <!-- =========================
+           RECEIPT ACTIONS
+      ========================== -->
+
+      <div class="receipt-actions">
+        <button type="button" id="printReceiptBtn" class="print-receipt-btn">
+          🖨️ Print Receipt
+        </button>
+
+        <button type="button" id="clearReceiptBtn" class="clear-receipt-btn">
+          Clear Receipt
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================
+         MANUAL ITEM MODAL
+    ========================== -->
+
+    <div class="modal hidden" id="manualItemModal">
+      <div class="modal-content">
+        <!-- MODAL HEADER -->
+
+        <div class="modal-header">
+          <div>
+            <h2>Add Manual Item</h2>
+
+            <p>Add a product without a barcode.</p>
+          </div>
+
+          <button
+            type="button"
+            id="closeManualItemBtn"
+            class="close-modal"
+            aria-label="Close manual item form"
+          >
+            ×
+          </button>
+        </div>
+
+        <!-- =========================
+             MANUAL ITEM FORM
+        ========================== -->
+
+        <form id="manualItemForm">
+          <!-- PRODUCT NAME -->
+
+          <div class="form-group">
+            <label for="manualItemName">Product Name</label>
+
+            <input
+              type="text"
+              id="manualItemName"
+              placeholder="Enter product name"
+              required
+            />
+          </div>
+
+          <!-- PRICE -->
+
+          <div class="form-group">
+            <label for="manualItemPrice">Price</label>
+
+            <input
+              type="number"
+              id="manualItemPrice"
+              placeholder="Enter price"
+              min="0"
+              step="1"
+              required
+            />
+          </div>
+
+          <!-- QUANTITY -->
+
+          <div class="form-group">
+            <label for="manualItemQuantity">Quantity</label>
+
+            <input
+              type="number"
+              id="manualItemQuantity"
+              value="1"
+              min="1"
+              step="1"
+              required
+            />
+          </div>
+
+          <!-- ADD TO CART -->
+
+          <button type="submit" class="add-manual-btn">Add to Cart</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script src="https://unpkg.com/@zxing/browser@0.2.1"></script>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
