@@ -123,6 +123,66 @@ try {
 }
 
 // =========================
+// BACKEND CONNECTION
+// =========================
+// api.js exposes the Express backend. Products, sales and settings live in
+// MongoDB; localStorage is kept as a cache so the POS still opens, and still
+// sells, when the server or the database is unreachable.
+
+const api = window.StoreAPI || null;
+
+const isOnline = () => Boolean(api && api.online);
+
+const cacheSalesHistory = () => {
+  localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+};
+
+// =========================
+// OFFLINE NOTICE
+// =========================
+
+const showOfflineNotice = (details = "") => {
+  let notice = document.getElementById("offlineNotice");
+
+  if (!notice) {
+    notice = document.createElement("div");
+
+    notice.id = "offlineNotice";
+
+    notice.style.cssText = [
+      "position: fixed",
+      "left: 50%",
+      "bottom: 16px",
+      "transform: translateX(-50%)",
+      "z-index: 9999",
+      // Passive notice: clicks must reach the buttons underneath it.
+      "pointer-events: none",
+      "max-width: 90vw",
+      "padding: 10px 16px",
+      "border-radius: 8px",
+      "background: #92400e",
+      "color: #fff",
+      "font-size: 13px",
+      "box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25)",
+    ].join(";");
+
+    document.body.appendChild(notice);
+  }
+
+  notice.textContent = details
+    ? `Offline mode — saving to this device only. (${details})`
+    : "Offline mode — saving to this device only.";
+};
+
+const hideOfflineNotice = () => {
+  const notice = document.getElementById("offlineNotice");
+
+  if (notice) {
+    notice.remove();
+  }
+};
+
+// =========================
 // CART
 // =========================
 
@@ -354,7 +414,7 @@ const updateReceiptStoreInfo = () => {
 // =========================
 
 if (saveSettingsBtn) {
-  saveSettingsBtn.addEventListener("click", () => {
+  saveSettingsBtn.addEventListener("click", async () => {
     const storeName = storeNameInput.value.trim();
     const storeAddress = storeAddressInput.value.trim();
     const storePhone = storePhoneInput.value.trim();
@@ -385,6 +445,18 @@ if (saveSettingsBtn) {
       lowStockAlert: lowStockAlert,
       darkMode: darkModeToggle.checked,
     };
+
+    if (isOnline()) {
+      try {
+        const saved = await api.settings.update(storeSettings);
+
+        storeSettings = { ...storeSettings, ...saved };
+      } catch (error) {
+        alert(`Could not save settings on the server.\n\n${error.message}`);
+
+        return;
+      }
+    }
 
     localStorage.setItem("storeSettings", JSON.stringify(storeSettings));
 
@@ -707,6 +779,8 @@ const getAllProducts = () => {
 // SAVE PRODUCTS
 // =========================
 
+// Writes the local cache. The server copy is updated by the API calls in the
+// product form, the delete button and the receipt handler.
 const saveProducts = () => {
   localStorage.setItem("products", JSON.stringify(products));
 };
@@ -1611,7 +1685,7 @@ if (clearCartBtn) {
 // =========================
 
 if (generateReceiptBtn) {
-  generateReceiptBtn.addEventListener("click", () => {
+  generateReceiptBtn.addEventListener("click", async () => {
     viewingHistoricalReceipt = false;
 
     if (cart.length === 0) {
@@ -1704,22 +1778,6 @@ if (generateReceiptBtn) {
       receiptGrandTotal.textContent = `₦${subtotal.toLocaleString()}.00`;
     }
 
-    cart.forEach((item) => {
-      const product = products.find((product) => product.id === item.id);
-
-      if (!product || product.stock === undefined || product.stock === null) {
-        return;
-      }
-
-      product.stock = Number(product.stock) - item.quantity;
-    });
-
-    saveProducts();
-
-    displayProducts();
-
-    displayRegisteredProducts();
-
     const sale = {
       receiptNo: receiptNo,
 
@@ -1728,6 +1786,10 @@ if (generateReceiptBtn) {
       dateTime: dateTime,
 
       items: cart.map((item) => ({
+        // Manual items have ids like "manual-1736…"; the server stores those
+        // with no product reference and leaves stock alone.
+        productId: item.id,
+
         name: item.name,
 
         price: Number(item.price),
@@ -1744,9 +1806,46 @@ if (generateReceiptBtn) {
       total: subtotal,
     };
 
-    salesHistory.push(sale);
+    if (isOnline()) {
+      try {
+        const result = await api.sales.create(sale);
 
-    localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+        salesHistory.push(result.sale);
+
+        // The server owns stock levels — take its numbers, not ours.
+        (result.products || []).forEach((updated) => {
+          const product = products.find((item) => item.id === updated.id);
+
+          if (product) {
+            product.stock = updated.stock;
+          }
+        });
+      } catch (error) {
+        alert(`Could not record this sale on the server.\n\n${error.message}`);
+
+        return;
+      }
+    } else {
+      cart.forEach((item) => {
+        const product = products.find((product) => product.id === item.id);
+
+        if (!product || product.stock === undefined || product.stock === null) {
+          return;
+        }
+
+        product.stock = Number(product.stock) - item.quantity;
+      });
+
+      salesHistory.push(sale);
+    }
+
+    saveProducts();
+
+    cacheSalesHistory();
+
+    displayProducts();
+
+    displayRegisteredProducts();
 
     if (receiptSection) {
       receiptSection.classList.remove("hidden");
@@ -2279,11 +2378,23 @@ const displayRegisteredProducts = (productsToDisplay = products) => {
     const deleteBtn = productItem.querySelector(".delete-product-btn");
 
     if (deleteBtn) {
-      deleteBtn.addEventListener("click", () => {
+      deleteBtn.addEventListener("click", async () => {
         const confirmed = confirm(`Delete ${product.name}?`);
 
         if (!confirmed) {
           return;
+        }
+
+        if (isOnline()) {
+          try {
+            await api.products.remove(product.id);
+          } catch (error) {
+            alert(
+              `Could not delete ${product.name} on the server.\n\n${error.message}`,
+            );
+
+            return;
+          }
         }
 
         const index = products.findIndex((item) => item.id === product.id);
@@ -2371,7 +2482,7 @@ if (closeProductFormBtn) {
 // =========================
 
 if (productForm) {
-  productForm.addEventListener("submit", (event) => {
+  productForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const name = productNameInput.value.trim();
@@ -2414,15 +2525,33 @@ if (productForm) {
         return;
       }
 
-      product.name = name;
+      if (isOnline()) {
+        try {
+          const updated = await api.products.update(product.id, {
+            name: name,
+            price: price,
+            barcode: barcode,
+            category: category,
+            stock: stock,
+          });
 
-      product.price = price;
+          Object.assign(product, updated);
+        } catch (error) {
+          alert(`Could not update ${name} on the server.\n\n${error.message}`);
 
-      product.barcode = barcode;
+          return;
+        }
+      } else {
+        product.name = name;
 
-      product.category = category;
+        product.price = price;
 
-      product.stock = stock;
+        product.barcode = barcode;
+
+        product.category = category;
+
+        product.stock = stock;
+      }
 
       saveProducts();
 
@@ -2463,7 +2592,7 @@ if (productForm) {
       return;
     }
 
-    const newProduct = {
+    let newProduct = {
       id: Date.now(),
 
       name: name,
@@ -2476,6 +2605,23 @@ if (productForm) {
 
       stock: stock,
     };
+
+    if (isOnline()) {
+      try {
+        // The server assigns the id, so the saved product replaces the draft.
+        newProduct = await api.products.create({
+          name: name,
+          price: price,
+          barcode: barcode,
+          category: category,
+          stock: stock,
+        });
+      } catch (error) {
+        alert(`Could not save ${name} to the server.\n\n${error.message}`);
+
+        return;
+      }
+    }
 
     products.push(newProduct);
 
@@ -2820,7 +2966,7 @@ if (backupDataBtn) {
 // =========================
 
 if (clearSalesHistoryBtn) {
-  clearSalesHistoryBtn.addEventListener("click", () => {
+  clearSalesHistoryBtn.addEventListener("click", async () => {
     if (salesHistory.length === 0) {
       alert("There is no sales history to clear.");
 
@@ -2833,6 +2979,16 @@ if (clearSalesHistoryBtn) {
 
     if (!confirmed) {
       return;
+    }
+
+    if (isOnline()) {
+      try {
+        await api.sales.clear();
+      } catch (error) {
+        alert(`Could not clear sales history on the server.\n\n${error.message}`);
+
+        return;
+      }
     }
 
     salesHistory = [];
@@ -2888,6 +3044,86 @@ if (
 } else {
   showPage("pos");
 }
+
+// =========================
+// LOAD FROM THE BACKEND
+// =========================
+// The screens above are already painted from the local cache. This replaces
+// that cache with the server's copy as soon as the API answers.
+
+const hydrateFromServer = async () => {
+  if (!api) {
+    showOfflineNotice("api.js not loaded");
+
+    return;
+  }
+
+  const online = await api.checkConnection();
+
+  if (!online) {
+    showOfflineNotice(api.reason);
+
+    return;
+  }
+
+  try {
+    const [serverProducts, serverSales, serverSettings] = await Promise.all([
+      api.products.list(),
+      api.sales.list(),
+      api.settings.get(),
+    ]);
+
+    // `products` is a const array the rest of the file holds a reference to,
+    // so it is refilled in place rather than reassigned.
+    products.length = 0;
+
+    serverProducts.forEach((product) => products.push(product));
+
+    saveProducts();
+
+    salesHistory = Array.isArray(serverSales) ? serverSales : [];
+
+    cacheSalesHistory();
+
+    storeSettings = { ...storeSettings, ...serverSettings };
+
+    localStorage.setItem("storeSettings", JSON.stringify(storeSettings));
+
+    // The cart may still hold items keyed to cached ids that the server does
+    // not know about, so it starts empty on a fresh load.
+    cart = [];
+
+    hideOfflineNotice();
+
+    loadSettings();
+
+    applyDarkMode();
+
+    updateReceiptStoreInfo();
+
+    displayProducts();
+
+    displayCart();
+
+    displayHistory();
+
+    displayRegisteredProducts();
+
+    displayDashboard();
+
+    console.log(
+      `Loaded ${products.length} products and ${salesHistory.length} sales from the server.`,
+    );
+  } catch (error) {
+    api.online = false;
+
+    console.error("Could not load data from the server:", error);
+
+    showOfflineNotice(error.message);
+  }
+};
+
+hydrateFromServer();
 
 // =========================
 // FINAL CONFIRMATION
