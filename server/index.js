@@ -45,8 +45,8 @@ app.use("/api", notFound);
 
 app.use(express.static(PUBLIC_DIR));
 
-// The barcode scanner library ships with the project's dependencies, so the
-// POS does not need internet access to scan.
+// The barcode scanner library ships with the project's dependencies,
+// so the POS does not need internet access to scan.
 app.use(
   "/vendor/zxing",
   express.static(
@@ -65,17 +65,15 @@ app.get("/pos", (request, response) => {
 app.use(errorHandler);
 
 // =========================
-// START
+// DATABASE
 // =========================
 
-const start = async () => {
+const initializeDatabase = async () => {
   try {
     await connectDatabase();
 
     console.log("MongoDB connected.");
 
-    // Mongoose builds indexes in the background and swallows failures, which
-    // would leave the unique barcode index silently missing.
     try {
       await Promise.all([
         Product.syncIndexes(),
@@ -92,12 +90,22 @@ const start = async () => {
     if (seeded > 0) {
       console.log(`Seeded ${seeded} default products.`);
     }
+
+    return true;
   } catch (error) {
-    // The POS falls back to its browser cache, so a database outage should not
-    // stop the storefront from loading.
     console.error("MongoDB connection failed:", error.message);
     console.error("Serving the POS without the API until the database is up.");
+
+    return false;
   }
+};
+
+// =========================
+// LOCAL SERVER
+// =========================
+
+const start = async () => {
+  await initializeDatabase();
 
   const server = app.listen(PORT, () => {
     console.log(`Favour Store POS running on http://localhost:${PORT}`);
@@ -116,4 +124,14 @@ const start = async () => {
   });
 };
 
-start();
+// =========================
+// VERCEL
+// =========================
+
+// Vercel imports the Express app instead of starting app.listen().
+module.exports = app;
+
+// Only start the local server when this file is run directly.
+if (require.main === module) {
+  start();
+}
