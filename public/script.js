@@ -284,6 +284,8 @@ const lowStockInput = document.getElementById("lowStockInput");
 const darkModeToggle = document.getElementById("darkModeToggle");
 
 const backupDataBtn = document.getElementById("backupDataBtn");
+const restoreDataBtn = document.getElementById("restoreDataBtn");
+const restoreDataInput = document.getElementById("restoreDataInput");
 const clearSalesHistoryBtn = document.getElementById("clearSalesHistoryBtn");
 
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
@@ -501,6 +503,12 @@ let lastDetectedBarcode = null;
 
 let handheldScanTimer = null;
 let handheldScanProcessing = false;
+
+// How long the input must sit unchanged before a scan is treated as finished.
+const HANDHELD_SCAN_DELAY = 250;
+
+// The extra wait given to a code that could still have more characters coming.
+const HANDHELD_SCAN_PATIENCE = 600;
 
 // =========================
 // NAVIGATION ELEMENTS
@@ -1251,6 +1259,33 @@ const findProductByBarcode = (barcode) => {
 };
 
 // =========================
+// PARTIAL BARCODE
+// =========================
+// True when the text so far is the start of a longer barcode in the store, so
+// a scan still arriving is not mistaken for an unknown product.
+
+const isPartialBarcode = (barcode) => {
+  const cleanBarcode = String(barcode).trim();
+
+  if (cleanBarcode === "") {
+    return false;
+  }
+
+  return getAllProducts().some((item) => {
+    if (!item.barcode) {
+      return false;
+    }
+
+    const productBarcode = String(item.barcode).trim();
+
+    return (
+      productBarcode.length > cleanBarcode.length &&
+      productBarcode.startsWith(cleanBarcode)
+    );
+  });
+};
+
+// =========================
 // BEEP
 // =========================
 
@@ -1363,8 +1398,21 @@ if (barcodeInput) {
     }
 
     handheldScanTimer = setTimeout(() => {
+      // A slower scanner, or a hand-typed code, can pause mid-barcode. If what
+      // has arrived so far is the beginning of a barcode the store knows, it is
+      // an unfinished scan — wait for the rest instead of rejecting it.
+      if (isPartialBarcode(barcodeInput.value.trim())) {
+        // One product's barcode can be the start of another's, so the wait is
+        // extended once and then the code is accepted as it stands.
+        handheldScanTimer = setTimeout(() => {
+          processHandheldBarcode();
+        }, HANDHELD_SCAN_PATIENCE);
+
+        return;
+      }
+
       processHandheldBarcode();
-    }, 150);
+    }, HANDHELD_SCAN_DELAY);
   });
 
   barcodeInput.addEventListener("keydown", (event) => {
@@ -2962,6 +3010,145 @@ if (backupDataBtn) {
 }
 
 // =========================
+// RESTORE PRODUCTS
+// =========================
+// Takes a file written by Backup Data and adds the products it holds that the
+// store does not have yet. Sales history and settings are left alone, and
+// nothing is overwritten.
+
+const RESTORE_CATEGORIES = [
+  "Food",
+  "Drinks",
+  "Toiletries",
+  "Household",
+  "Others",
+];
+
+if (restoreDataBtn && restoreDataInput) {
+  restoreDataBtn.addEventListener("click", () => {
+    restoreDataInput.click();
+  });
+
+  restoreDataInput.addEventListener("change", async () => {
+    const file = restoreDataInput.files && restoreDataInput.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    let backup = null;
+
+    try {
+      backup = JSON.parse(await file.text());
+    } catch (error) {
+      alert("That file could not be read as a backup.");
+
+      restoreDataInput.value = "";
+
+      return;
+    }
+
+    // Accepts a full backup file or a bare list of products.
+    const incoming = Array.isArray(backup) ? backup : backup?.products;
+
+    if (!Array.isArray(incoming) || incoming.length === 0) {
+      alert("No products were found in that file.");
+
+      restoreDataInput.value = "";
+
+      return;
+    }
+
+    const confirmed = confirm(
+      `Restore ${incoming.length} products from ${file.name}?\n\nProducts already in the store are skipped. Sales history and settings are not changed.`,
+    );
+
+    if (!confirmed) {
+      restoreDataInput.value = "";
+
+      return;
+    }
+
+    let added = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const entry of incoming) {
+      const name = String(entry?.name ?? "").trim();
+
+      if (name === "") {
+        failed += 1;
+
+        continue;
+      }
+
+      const barcode = String(entry?.barcode ?? "").trim();
+
+      const alreadyHere = barcode
+        ? findProductByBarcode(barcode)
+        : products.find(
+            (product) =>
+              String(product.name).trim().toLowerCase() === name.toLowerCase(),
+          );
+
+      if (alreadyHere) {
+        skipped += 1;
+
+        continue;
+      }
+
+      const price = Number(entry?.price);
+
+      const stock = Number(entry?.stock);
+
+      const product = {
+        name: name,
+
+        price: Number.isFinite(price) && price > 0 ? price : 0,
+
+        barcode: barcode,
+
+        category: RESTORE_CATEGORIES.includes(entry?.category)
+          ? entry.category
+          : "Others",
+
+        stock: Number.isFinite(stock) && stock > 0 ? Math.floor(stock) : 0,
+      };
+
+      if (isOnline()) {
+        try {
+          products.push(await api.products.create(product));
+
+          added += 1;
+        } catch (error) {
+          console.error(`Could not restore ${name}:`, error.message);
+
+          failed += 1;
+        }
+      } else {
+        products.push({ id: Date.now() + added, ...product });
+
+        added += 1;
+      }
+    }
+
+    saveProducts();
+
+    displayProducts();
+
+    displayRegisteredProducts();
+
+    displayDashboard();
+
+    restoreDataInput.value = "";
+
+    alert(
+      `Restore finished.\n\nAdded: ${added}\nAlready in the store: ${skipped}\nCould not be added: ${failed}`,
+    );
+  });
+}
+
+// =========================
 // CLEAR SALES HISTORY
 // =========================
 
@@ -3089,9 +3276,36 @@ const hydrateFromServer = async () => {
 
     localStorage.setItem("storeSettings", JSON.stringify(storeSettings));
 
-    // The cart may still hold items keyed to cached ids that the server does
-    // not know about, so it starts empty on a fresh load.
-    cart = [];
+    // A cashier may already be scanning while this loads, so the cart is kept.
+    // Items are re-keyed onto the server's ids; only items the server no longer
+    // knows about are dropped.
+    cart = cart.filter((item) => {
+      // Manual items belong to no product and carry their own price.
+      if (String(item.id).startsWith("manual-")) {
+        return true;
+      }
+
+      const match =
+        products.find((product) => product.id === item.id) ||
+        (item.barcode &&
+          products.find(
+            (product) =>
+              product.barcode &&
+              String(product.barcode).trim() === String(item.barcode).trim(),
+          ));
+
+      if (!match) {
+        return false;
+      }
+
+      item.id = match.id;
+
+      item.name = match.name;
+
+      item.price = Number(match.price);
+
+      return true;
+    });
 
     hideOfflineNotice();
 
