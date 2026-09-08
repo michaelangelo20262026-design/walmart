@@ -68,37 +68,74 @@ app.use(errorHandler);
 // DATABASE
 // =========================
 
+let databaseReady = false;
+let databaseInitializing = null;
+
 const initializeDatabase = async () => {
-  try {
-    await connectDatabase();
-
-    console.log("MongoDB connected.");
-
-    try {
-      await Promise.all([
-        Product.syncIndexes(),
-        Sale.syncIndexes(),
-        Setting.syncIndexes(),
-      ]);
-    } catch (error) {
-      console.error("Index build failed:", error.message);
-      console.error("Duplicate barcodes may not be rejected by the database.");
-    }
-
-    const seeded = await seedDefaultProducts();
-
-    if (seeded > 0) {
-      console.log(`Seeded ${seeded} default products.`);
-    }
-
+  if (databaseReady) {
     return true;
-  } catch (error) {
-    console.error("MongoDB connection failed:", error.message);
-    console.error("Serving the POS without the API until the database is up.");
-
-    return false;
   }
+
+  if (databaseInitializing) {
+    return databaseInitializing;
+  }
+
+  databaseInitializing = (async () => {
+    try {
+      await connectDatabase();
+
+      console.log("MongoDB connected.");
+
+      try {
+        await Promise.all([
+          Product.syncIndexes(),
+          Sale.syncIndexes(),
+          Setting.syncIndexes(),
+        ]);
+      } catch (error) {
+        console.error("Index build failed:", error.message);
+        console.error(
+          "Duplicate barcodes may not be rejected by the database.",
+        );
+      }
+
+      const seeded = await seedDefaultProducts();
+
+      if (seeded > 0) {
+        console.log(`Seeded ${seeded} default products.`);
+      }
+
+      databaseReady = true;
+
+      return true;
+    } catch (error) {
+      console.error("MongoDB connection failed:", error.message);
+
+      databaseReady = false;
+
+      return false;
+    } finally {
+      databaseInitializing = null;
+    }
+  })();
+
+  return databaseInitializing;
 };
+
+// =========================
+// VERCEL DATABASE INITIALIZATION
+// =========================
+
+// Vercel imports this Express app instead of running start().
+// Initialize MongoDB when the serverless function receives a request.
+
+app.use(async (request, response, next) => {
+  if (request.path.startsWith("/api")) {
+    await initializeDatabase();
+  }
+
+  next();
+});
 
 // =========================
 // LOCAL SERVER
