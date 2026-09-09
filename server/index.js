@@ -32,39 +32,6 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
 // =========================
-// API
-// =========================
-
-app.use("/api", apiRoutes);
-
-app.use("/api", notFound);
-
-// =========================
-// FRONT END
-// =========================
-
-app.use(express.static(PUBLIC_DIR));
-
-// The barcode scanner library ships with the project's dependencies,
-// so the POS does not need internet access to scan.
-app.use(
-  "/vendor/zxing",
-  express.static(
-    path.join(__dirname, "..", "node_modules", "@zxing", "browser", "umd"),
-  ),
-);
-
-app.get("/pos", (request, response) => {
-  response.sendFile(path.join(PUBLIC_DIR, "pos.html"));
-});
-
-// =========================
-// ERRORS
-// =========================
-
-app.use(errorHandler);
-
-// =========================
 // DATABASE
 // =========================
 
@@ -126,8 +93,8 @@ const initializeDatabase = async () => {
 // VERCEL DATABASE INITIALIZATION
 // =========================
 
-// Vercel imports this Express app instead of running start().
-// Initialize MongoDB when the serverless function receives a request.
+// This must come BEFORE the API routes.
+// Vercel initializes the database before handling API requests.
 
 app.use(async (request, response, next) => {
   if (request.path.startsWith("/api")) {
@@ -136,6 +103,40 @@ app.use(async (request, response, next) => {
 
   next();
 });
+
+// =========================
+// API
+// =========================
+
+app.use("/api", apiRoutes);
+
+app.use("/api", notFound);
+
+// =========================
+// FRONT END
+// =========================
+
+app.use(express.static(PUBLIC_DIR));
+
+// The barcode scanner library ships with the project's dependencies,
+// so the POS does not need internet access to scan.
+
+app.use(
+  "/vendor/zxing",
+  express.static(
+    path.join(__dirname, "..", "node_modules", "@zxing", "browser", "umd"),
+  ),
+);
+
+app.get("/pos", (request, response) => {
+  response.sendFile(path.join(PUBLIC_DIR, "pos.html"));
+});
+
+// =========================
+// ERRORS
+// =========================
+
+app.use(errorHandler);
 
 // =========================
 // LOCAL SERVER
