@@ -9,7 +9,7 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
-const { connectDatabase } = require("./config/db");
+const { connectDatabase, isConnected } = require("./config/db");
 const { seedDefaultProducts } = require("./config/seed");
 const Product = require("./models/Product");
 const Sale = require("./models/Sale");
@@ -39,8 +39,15 @@ let databaseReady = false;
 let databaseInitializing = null;
 
 const initializeDatabase = async () => {
-  if (databaseReady) {
+  // If we think the database is ready, make sure MongoDB
+  // is actually still connected before skipping initialization.
+  if (databaseReady && isConnected()) {
     return true;
+  }
+
+  // If the connection was lost, allow initialization to run again.
+  if (!isConnected()) {
+    databaseReady = false;
   }
 
   if (databaseInitializing) {

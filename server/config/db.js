@@ -10,7 +10,29 @@ const mongoose = require("mongoose");
 
 let connected = false;
 
-const isConnected = () => connected && mongoose.connection.readyState === 1;
+// =========================
+// CONNECTION EVENTS
+// =========================
+
+mongoose.connection.on("connected", () => {
+  connected = true;
+});
+
+mongoose.connection.on("disconnected", () => {
+  connected = false;
+});
+
+// =========================
+// CHECK CONNECTION
+// =========================
+
+const isConnected = () => {
+  return connected && mongoose.connection.readyState === 1;
+};
+
+// =========================
+// CONNECT DATABASE
+// =========================
 
 const connectDatabase = async () => {
   const uri = process.env.MONGODB_URI;
@@ -19,19 +41,24 @@ const connectDatabase = async () => {
     throw new Error("MONGODB_URI is not set. Copy .env.example to .env first.");
   }
 
-  mongoose.connection.on("connected", () => {
+  // If MongoDB is already connected, don't create another connection.
+  if (mongoose.connection.readyState === 1) {
     connected = true;
-  });
 
-  mongoose.connection.on("disconnected", () => {
-    connected = false;
-  });
+    return mongoose.connection;
+  }
 
   try {
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 8000,
     });
+
+    connected = true;
+
+    return mongoose.connection;
   } catch (error) {
+    connected = false;
+
     console.error("MongoDB connection error:", {
       name: error.name,
       message: error.message,
@@ -41,10 +68,13 @@ const connectDatabase = async () => {
 
     throw error;
   }
-
-  connected = true;
-
-  return mongoose.connection;
 };
 
-module.exports = { connectDatabase, isConnected };
+// =========================
+// EXPORTS
+// =========================
+
+module.exports = {
+  connectDatabase,
+  isConnected,
+};
