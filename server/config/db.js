@@ -27,9 +27,20 @@ const connectDatabase = async () => {
     connected = false;
   });
 
-  await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 8000,
-  });
+  try {
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 8000,
+    });
+  } catch (error) {
+    console.error("MongoDB connection error:", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      reason: error.reason?.message,
+    });
+
+    throw error;
+  }
 
   connected = true;
 
