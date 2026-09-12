@@ -188,6 +188,7 @@ input::placeholder {
   display: grid;
   grid-template-columns: 1fr 430px;
   min-height: calc(100vh - 70px);
+  align-items: start;
 }
 
 /* =========================
@@ -987,7 +988,8 @@ input::placeholder {
   border-left: 1px solid #dfe4ec;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 70px);
+  min-height: 0;
+  align-self: start;
 }
 
 /* =========================
@@ -1039,9 +1041,9 @@ input::placeholder {
 ========================= */
 
 .cart-items {
-  flex: 1;
+  flex: none;
   padding: 15px;
-  overflow-y: auto;
+  overflow-y: visible;
 }
 
 .empty-cart {
@@ -1238,11 +1240,13 @@ input::placeholder {
 ========================= */
 
 .receipt-section {
+  width: 100%;
   background: #eef1f6;
-  padding: 40px 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-top: 1px solid #dfe4ec;
 }
 
 .hidden {
@@ -1999,7 +2003,7 @@ input::placeholder {
   .cart-area {
     border-left: none;
     border-top: 1px solid #dfe4ec;
-    min-height: 500px;
+    min-height: 0;
   }
 
   #registeredProducts {
@@ -2069,8 +2073,8 @@ input::placeholder {
     min-width: 0;
     border-left: none;
     border-top: 1px solid #dfe4ec;
-    min-height: 500px;
-    overflow: hidden;
+    min-height: 0;
+    overflow: visible;
   }
 
   /* =========================
@@ -2234,11 +2238,13 @@ input::placeholder {
   }
 
   /* Hide the desktop table header on mobile */
+
   .registered-products-header {
     display: none;
   }
 
   /* Make each product a mobile card */
+
   .registered-product {
     width: 100%;
     min-width: 0;
@@ -2300,6 +2306,7 @@ input::placeholder {
   }
 
   /* Edit + Delete buttons */
+
   .product-actions {
     grid-column: 1 / -1;
     width: 100%;
@@ -2354,6 +2361,8 @@ input::placeholder {
     width: 100%;
     min-width: 0;
     padding: 14px;
+    flex: none;
+    overflow-y: visible;
   }
 
   .cart-item {
@@ -2387,7 +2396,7 @@ input::placeholder {
 
   .receipt-section {
     width: 100%;
-    padding: 25px 12px;
+    padding: 20px 12px 25px;
   }
 
   .receipt {
@@ -2530,6 +2539,7 @@ input::placeholder {
   }
 
   /* Keep product management responsive */
+
   #registeredProducts {
     width: 100%;
     max-width: 100%;

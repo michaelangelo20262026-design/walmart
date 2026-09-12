@@ -195,6 +195,96 @@
             Generate Receipt
           </button>
         </div>
+
+        <!-- =========================
+             RECEIPT AREA
+        ========================== -->
+
+        <section class="receipt-section hidden" id="receiptSection">
+          <div class="receipt">
+            <!-- RECEIPT HEADER -->
+
+            <div class="receipt-header">
+              <h2 id="receiptStoreName">Favour Store</h2>
+
+              <p id="receiptStoreAddress"></p>
+
+              <p id="receiptStorePhone"></p>
+
+              <p>SALES RECEIPT</p>
+            </div>
+
+            <!-- RECEIPT INFORMATION -->
+
+            <div class="receipt-info">
+              <p>
+                Receipt No:
+                <span id="receiptNumber"></span>
+              </p>
+
+              <p>
+                Date:
+                <span id="receiptDate"></span>
+              </p>
+            </div>
+
+            <!-- RECEIPT ITEMS -->
+
+            <div class="receipt-items" id="receiptItems">
+              <!-- JavaScript will add receipt items -->
+            </div>
+
+            <!-- RECEIPT TOTAL -->
+
+            <div class="receipt-total">
+              <div>
+                <span>Subtotal</span>
+
+                <strong id="receiptSubtotal">₦0.00</strong>
+              </div>
+
+              <div>
+                <span>Discount</span>
+
+                <strong id="receiptDiscount">₦0.00</strong>
+              </div>
+
+              <div class="grand-total">
+                <span>Total</span>
+
+                <strong id="receiptGrandTotal">₦0.00</strong>
+              </div>
+            </div>
+
+            <!-- THANK YOU -->
+
+            <p class="thank-you" id="receiptFooter">
+              Thank you for shopping with us!
+            </p>
+          </div>
+
+          <!-- =========================
+               RECEIPT ACTIONS
+          ========================== -->
+
+          <div class="receipt-actions">
+            <button
+              type="button"
+              id="printReceiptBtn"
+              class="print-receipt-btn"
+            >
+              🖨️ Print Receipt
+            </button>
+
+            <button
+              type="button"
+              id="clearReceiptBtn"
+              class="clear-receipt-btn"
+            >
+              Clear Receipt
+            </button>
+          </div>
+        </section>
       </section>
     </main>
 
@@ -652,88 +742,6 @@
       <div class="settings-footer">
         <button type="button" id="saveSettingsBtn" class="save-settings-btn">
           Save Settings
-        </button>
-      </div>
-    </section>
-
-    <!-- =========================
-         RECEIPT AREA
-    ========================== -->
-
-    <section class="receipt-section hidden" id="receiptSection">
-      <div class="receipt">
-        <!-- RECEIPT HEADER -->
-
-        <div class="receipt-header">
-          <h2 id="receiptStoreName">Favour Store</h2>
-
-          <p id="receiptStoreAddress"></p>
-
-          <p id="receiptStorePhone"></p>
-
-          <p>SALES RECEIPT</p>
-        </div>
-
-        <!-- RECEIPT INFORMATION -->
-
-        <div class="receipt-info">
-          <p>
-            Receipt No:
-            <span id="receiptNumber"></span>
-          </p>
-
-          <p>
-            Date:
-            <span id="receiptDate"></span>
-          </p>
-        </div>
-
-        <!-- RECEIPT ITEMS -->
-
-        <div class="receipt-items" id="receiptItems">
-          <!-- JavaScript will add receipt items -->
-        </div>
-
-        <!-- RECEIPT TOTAL -->
-
-        <div class="receipt-total">
-          <div>
-            <span>Subtotal</span>
-
-            <strong id="receiptSubtotal">₦0.00</strong>
-          </div>
-
-          <div>
-            <span>Discount</span>
-
-            <strong id="receiptDiscount">₦0.00</strong>
-          </div>
-
-          <div class="grand-total">
-            <span>Total</span>
-
-            <strong id="receiptGrandTotal">₦0.00</strong>
-          </div>
-        </div>
-
-        <!-- THANK YOU -->
-
-        <p class="thank-you" id="receiptFooter">
-          Thank you for shopping with us!
-        </p>
-      </div>
-
-      <!-- =========================
-           RECEIPT ACTIONS
-      ========================== -->
-
-      <div class="receipt-actions">
-        <button type="button" id="printReceiptBtn" class="print-receipt-btn">
-          🖨️ Print Receipt
-        </button>
-
-        <button type="button" id="clearReceiptBtn" class="clear-receipt-btn">
-          Clear Receipt
         </button>
       </div>
     </section>
